@@ -1,0 +1,5 @@
+ccxt
+loguru
+numpy
+pandas
+tqdm

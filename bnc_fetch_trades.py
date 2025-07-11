@@ -49,7 +49,7 @@ async def fetch_2h_perp_trades(
             ["timestamp", "symbol", "id", "side", "price", "amount", "cost"]
         ].query("timestamp < @until")
     except Exception as e:
-        logger.exception(f"Error fetching trades for {symbol}: {e}")
+        logger.exception("Error fetching trades for {}: {}", symbol, e)
         raise e
     finally:
         await bnc.close()
@@ -65,7 +65,7 @@ async def fetch_all_24h_trades(start: int) -> pd.DataFrame:
             trades_delta = await tqdm.gather(*tasks[60:])
             trades_data.extend(trades_delta)
             if len(trades_data) < 89:
-                raise Exception(f"Failed to fetch trades for {since}")
+                raise Exception("Failed to fetch trades for {}", since)
             trades_data = pd.concat(trades_data)
             since_dt = datetime.fromtimestamp(since / 1000).strftime("%Y-%m-%d_%H")
             trades_data.to_parquet(f"data/trades_{since_dt}.gzip", compression="gzip", index=False)

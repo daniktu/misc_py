@@ -3,3 +3,4 @@ loguru
 numpy
 pandas
 tqdm
+pyarrow

@@ -45,20 +45,13 @@ async def fetch_4h_perp_trades(
 
 async def fetch_all_24h_trades(start: int) -> pd.DataFrame:
     async with ccxta.binance() as bnc:
-        trades = list()
-        i = 0
         for since in range(start, start + 86_400_000, 14_400_000):
             tasks = [fetch_4h_perp_trades(bnc, symbol, since) for symbol in TOP_PERPS["symbol"]]
-            trades[i] = await tqdm.gather(*tasks)
-            trades[i] = pd.concat(trades[i])
-            i += 1
-        trades = pd.concat[trades]
-    return trades
-
-
+            trades_data = await tqdm.gather(*tasks)
+            trades_data = pd.concat(trades_data)
+            since_dt = datetime.fromtimestamp(since / 1000).strftime("%Y-%m-%d_%H")
+            trades_data.to_parquet(f"data/trades_{since_dt}.gzip", compression="gzip", index=False)
 
 if __name__ == "__main__":
     for start in [TS1, TS2, TS3]:
-        trades = asyncio.run(fetch_all_24h_trades(start))
-        start_date = datetime.fromtimestamp(start / 1000).strftime("%Y-%m-%d")
-        trades.to_parquet(f"data/trades_{start_date}.gzip", compression="gzip", index=False)
+        asyncio.run(fetch_all_24h_trades(start))

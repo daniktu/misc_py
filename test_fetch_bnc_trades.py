@@ -3,7 +3,6 @@ from datetime import datetime
 
 import pandas as pd
 import ccxt.async_support as ccxta
-from tqdm.asyncio import tqdm
 
 TS3 = 1752087600000
 TOP_PERPS = pd.read_parquet("data/top_usdt_perps.gzip")["symbol"]

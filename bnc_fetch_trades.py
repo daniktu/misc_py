@@ -64,6 +64,8 @@ async def fetch_all_24h_trades(start: int) -> pd.DataFrame:
             trades_data.extend(trades_delta)
             trades_delta = await tqdm.gather(*tasks[60:])
             trades_data.extend(trades_delta)
+            if len(trades_data) < 89:
+                raise Exception(f"Failed to fetch trades for {since}")
             trades_data = pd.concat(trades_data)
             since_dt = datetime.fromtimestamp(since / 1000).strftime("%Y-%m-%d_%H")
             trades_data.to_parquet(f"data/trades_{since_dt}.gzip", compression="gzip", index=False)

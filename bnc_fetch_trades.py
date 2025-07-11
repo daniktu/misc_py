@@ -18,11 +18,11 @@ logger.add(
 )
 
 
-async def fetch_4h_perp_trades(
+async def fetch_2h_perp_trades(
     bnc: ccxta.binance, symbol: str, since: int
 ) -> pd.DataFrame:
     try:
-        until = since + 14_400_000
+        until = since + 7_200_000
         trades = await bnc.fetch_trades(
             symbol,
             since=since,
@@ -49,19 +49,22 @@ async def fetch_4h_perp_trades(
             ["timestamp", "symbol", "id", "side", "price", "amount", "cost"]
         ].query("timestamp < @until")
     except Exception as e:
-        logger.error(f"Error fetching trades for {symbol}: {e}")
-        trades = pd.DataFrame()
+        logger.exception(f"Error fetching trades for {symbol}: {e}")
+        raise e
+    finally:
+        bnc.close()
     return trades
 
 async def fetch_all_24h_trades(start: int) -> pd.DataFrame:
     async with ccxta.binance() as bnc:
-        for since in range(start, start + 86_400_000, 14_400_000):
-            tasks = [fetch_4h_perp_trades(bnc, symbol, since) for symbol in TOP_PERPS["symbol"]]
-            trades_data = await tqdm.gather(*tasks)
+        for since in range(start, start + 86_400_000, 7_200_000):
+            tasks = [fetch_2h_perp_trades(bnc, symbol, since) for symbol in TOP_PERPS["symbol"]]
+            trades_data = await tqdm.gather(*tasks[:30])
+            trades_data.extend(await tqdm.gather(*tasks[30:60]))
+            trades_data.extend(await tqdm.gather(*tasks[60:]))
             trades_data = pd.concat(trades_data)
             since_dt = datetime.fromtimestamp(since / 1000).strftime("%Y-%m-%d_%H")
             trades_data.to_parquet(f"data/trades_{since_dt}.gzip", compression="gzip", index=False)
-
 
 
 if __name__ == "__main__":
